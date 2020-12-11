@@ -25,16 +25,45 @@ public class ProductController {
     private ProductRepository productRepository;
 
     @GetMapping
-    public String indexProductPage(Model model, @RequestParam(name = "nameFilter", required = false) String nameFilter) {
+    public String indexProductPage(Model model, @RequestParam(name = "nameFilter", required = false) String nameFilter,
+                                   @RequestParam(name = "minCost", required = false) String minCost,
+                                   @RequestParam(name = "maxCost", required = false) String maxCost) {
         logger.info("Product page update");
         Specification<Product> spec = Specification.where(null);
 
         if (nameFilter != null && !nameFilter.isBlank()) {
             spec = spec.and(ProductSpecification.nameLike(nameFilter));
         }
+        if((minCost == null || minCost.isBlank()) || (maxCost == null || maxCost.isBlank())){
+            if((minCost == null || minCost.isBlank()) && (maxCost == null || maxCost.isBlank())){
+                model.addAttribute("products", productRepository.findAll());
+                return "product";
+            }
+            if(minCost != null && !minCost.isBlank()){
+                spec = spec.and(ProductSpecification.minPrice(Integer.parseInt(minCost)));
+            }
+
+            if(maxCost != null && !maxCost.isBlank()){
+                spec = spec.and(ProductSpecification.maxPrice(Integer.parseInt(maxCost)));
+            }
+        }else {
+            spec = spec.and(ProductSpecification.betweenPrice(Integer.parseInt(minCost), Integer.parseInt(maxCost)));
+        }
 
         model.addAttribute("products", productRepository.findAll(spec));
         return "product";
+    }
+
+    @GetMapping("/fillDB")
+    public String fillDB(){
+        productRepository.deleteAll();
+        List<Product> products = new ArrayList<>();
+        int cost = 0;
+        for(var i = 1; i <= 20; i++){
+            products.add(new Product(null,"product_"+i, "desc_"+i,new BigDecimal(cost+=250)));
+        }
+        productRepository.saveAll(products);
+        return "redirect:/product";
     }
 
     @GetMapping("/{id}")
