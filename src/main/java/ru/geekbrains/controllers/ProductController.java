@@ -34,9 +34,12 @@ public class ProductController {
                                    @RequestParam(name = "minCost") Optional<BigDecimal> minCost,
                                    @RequestParam(name = "maxCost") Optional<BigDecimal> maxCost,
                                    @RequestParam(name = "page") Optional<Integer> page,
-                                   @RequestParam(name = "size") Optional<Integer> size) {
+                                   @RequestParam(name = "size") Optional<Integer> size,
+                                   @RequestParam(name = "sortDirection") Optional<String> sortDirection,
+                                   @RequestParam(name = "fieldName") Optional<String> fieldName) {
         logger.info("Product page update");
-        model.addAttribute("products", productService.findWithFilter(nameFilter, minCost, maxCost, page, size));
+        logger.info("Direction = " + (sortDirection.orElse(null)));
+        model.addAttribute("products", productService.findWithFilter(nameFilter, minCost, maxCost, page, size, sortDirection, fieldName));
         return "product";
     }
 

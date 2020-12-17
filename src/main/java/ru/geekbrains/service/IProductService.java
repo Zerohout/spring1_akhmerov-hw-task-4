@@ -15,7 +15,9 @@ public interface IProductService {
                                  Optional<BigDecimal> minCost,
                                  Optional<BigDecimal> maxCost,
                                  Optional<Integer> page,
-                                 Optional<Integer> size);
+                                 Optional<Integer> size,
+                                 Optional<String> sortDirection,
+                                 Optional<String> fieldName);
 
     List<Product> findAll(Specification<Product> spec);
 

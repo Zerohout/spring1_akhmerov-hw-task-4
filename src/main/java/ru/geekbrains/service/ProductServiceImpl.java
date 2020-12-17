@@ -3,6 +3,7 @@ package ru.geekbrains.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +30,9 @@ public class ProductServiceImpl implements IProductService {
                                         Optional<BigDecimal> minCost,
                                         Optional<BigDecimal> maxCost,
                                         Optional<Integer> page,
-                                        Optional<Integer> size) {
+                                        Optional<Integer> size,
+                                        Optional<String> sortDirection,
+                                        Optional<String> fieldName) {
         Specification<Product> spec = Specification.where(null);
 
         if (nameFilter.isPresent()) {
@@ -41,7 +44,16 @@ public class ProductServiceImpl implements IProductService {
         if (maxCost.isPresent()) {
             spec = spec.and(ProductSpecification.maxPrice(maxCost.get()));
         }
-        return productRepository.findAll(spec, PageRequest.of(page.orElse(1) - 1, size.orElse(5)));
+
+
+        Sort.Direction direction = null;
+
+        if(sortDirection.isPresent()){
+            direction = sortDirection.get().equals("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        }
+
+        return productRepository.findAll(spec, PageRequest.of(page.orElse(1) - 1, size.orElse(5),
+                Sort.by(direction == null ? Sort.DEFAULT_DIRECTION : direction, fieldName.isEmpty() ? "id" : fieldName.get())));
     }
 
     @Override
