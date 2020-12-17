@@ -1,36 +1,11 @@
 <!doctype html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 
-<head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
-          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css"/>
-    <title>EShop application</title>
-</head>
+<head th:replace="fragments/head.html :: head"/>
 
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="#">EShop</a>
-
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
-            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <ul class="navbar-nav mr-auto">
-            <li class="nav-item active">
-                <a class="nav-link" href="#">List</a>
-            </li>
-        </ul>
-    </div>
-</nav>
+<nav th:replace="fragments/head.html :: navbar"/>
 
 <div class="container">
     <div class="row py-2">
@@ -41,15 +16,18 @@
         <form class="form-inline mt-3" method="get">
             <div class="form-group mx-sm-3 mb-2">
                 <label for="name-filter" class="sr-only">Name filter:</label>
-                <input th:value="${param.nameFilter}" type="text" class="form-control" name="nameFilter" id="name-filter" placeholder="Name filter">
+                <input th:value="${param.nameFilter}" type="text" class="form-control"
+                       name="nameFilter" id="name-filter" placeholder="Name filter">
             </div>
             <div class="form-group mx-sm-3 mb-2">
                 <label for="min-filter" class="sr-only">Min cost:</label>
-                <input th:value="${param.minCost}" type="text" class="form-control" name="minCost" id="min-filter" placeholder="Min cost">
+                <input th:value="${param.minCost}" type="text" class="form-control"
+                       name="minCost" id="min-filter" placeholder="Min cost">
             </div>
             <div class="form-group mx-sm-3 mb-2">
                 <label for="max-filter" class="sr-only">Max cost:</label>
-                <input th:value="${param.maxCost}" type="text" class="form-control" name="maxCost" id="max-filter" placeholder="Max cost">
+                <input th:value="${param.maxCost}" type="text" class="form-control"
+                       name="maxCost" id="max-filter" placeholder="Max cost">
             </div>
             <button type="submit" class="btn btn-primary mb-2">Apply</button>
         </form>
@@ -66,7 +44,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="product : ${products}">
+                <tr th:if="${products.hasContent()}" th:each="product : ${products.content}">
                     <th scope="row" th:text="${product.id}">1</th>
                     <td th:text="${product.name}">MacBook Air 13" CZ</td>
                     <td th:text="${product.description}">MacBook - Intel Core i5 5350U Broadwell, 13" TN lesklý 1440 ×
@@ -82,22 +60,30 @@
                         </form>
                     </td>
                 </tr>
+                <tr th:unless="${products.hasContent()}">
+                    <td colspan="5">No data</td>
+                </tr>
                 </tbody>
             </table>
+        </div>
+        <div th:if="${products.hasContent()}" class="col-12">
+            <nav aria-label="Page navigation example">
+                <ul class="pagination">
+                    <li class="page-item"><a class="page-link" href="#">Previous</a></li>
+                    <li th:each="num: ${#numbers.sequence(1, products.totalPages)}"
+                        th:classappend="${num == products.number + 1} ? 'active'"
+                        class="page-item">
+                        <a class="page-link" th:href="@{/product(page=${num}, size=${products.size},
+                        nameFilter=${param.nameFilter}, minCost=${param.minCost}, maxCost=${param.maxCost})}">[[${num}]]</a></li>
+                    <li class="page-item"><a class="page-link" href="#">Next</a></li>
+                </ul>
+            </nav>
         </div>
     </div>
 </div>
 
-<!-- Optional JavaScript -->
-<!-- jQuery first, then Popper.js, then Bootstrap JS -->
-<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
-        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
-        crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
-        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
-        crossorigin="anonymous"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
-        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
-        crossorigin="anonymous"></script>
+<script th:replace="fragments/footer.html :: scripts"/>
+
 </body>
+
 </html>
