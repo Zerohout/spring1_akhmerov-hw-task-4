@@ -4,16 +4,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 import ru.geekbrains.persist.entity.Product;
-import ru.geekbrains.persist.repo.ProductRepository;
 import ru.geekbrains.persist.repo.ProductSpecification;
+import ru.geekbrains.service.IProductService;
 
+import javax.validation.Valid;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/product")
@@ -22,54 +27,35 @@ public class ProductController {
     private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
 
     @Autowired
-    private ProductRepository productRepository;
+    private IProductService productService;
 
     @GetMapping
-    public String indexProductPage(Model model, @RequestParam(name = "nameFilter", required = false) String nameFilter,
-                                   @RequestParam(name = "minCost", required = false) String minCost,
-                                   @RequestParam(name = "maxCost", required = false) String maxCost) {
+    public String indexProductPage(Model model, @RequestParam(name = "nameFilter") Optional<String> nameFilter,
+                                   @RequestParam(name = "minCost") Optional<BigDecimal> minCost,
+                                   @RequestParam(name = "maxCost") Optional<BigDecimal> maxCost,
+                                   @RequestParam(name = "page") Optional<Integer> page,
+                                   @RequestParam(name = "size") Optional<Integer> size) {
         logger.info("Product page update");
-        Specification<Product> spec = Specification.where(null);
-
-        if (nameFilter != null && !nameFilter.isBlank()) {
-            spec = spec.and(ProductSpecification.nameLike(nameFilter));
-        }
-        if((minCost == null || minCost.isBlank()) || (maxCost == null || maxCost.isBlank())){
-            if((minCost == null || minCost.isBlank()) && (maxCost == null || maxCost.isBlank())){
-                model.addAttribute("products", productRepository.findAll());
-                return "product";
-            }
-            if(minCost != null && !minCost.isBlank()){
-                spec = spec.and(ProductSpecification.minPrice(Integer.parseInt(minCost)));
-            }
-
-            if(maxCost != null && !maxCost.isBlank()){
-                spec = spec.and(ProductSpecification.maxPrice(Integer.parseInt(maxCost)));
-            }
-        }else {
-            spec = spec.and(ProductSpecification.betweenPrice(Integer.parseInt(minCost), Integer.parseInt(maxCost)));
-        }
-
-        model.addAttribute("products", productRepository.findAll(spec));
+        model.addAttribute("products", productService.findWithFilter(nameFilter, minCost, maxCost, page, size));
         return "product";
     }
 
     @GetMapping("/fillDB")
-    public String fillDB(){
-        productRepository.deleteAll();
+    public String fillDB() {
+        productService.deleteAll();
         List<Product> products = new ArrayList<>();
         int cost = 0;
-        for(var i = 1; i <= 20; i++){
-            products.add(new Product(null,"product_"+i, "desc_"+i,new BigDecimal(cost+=250)));
+        for (var i = 1; i <= 20; i++) {
+            products.add(new Product(null, "product_" + i, "desc_" + i, new BigDecimal(cost += 250)));
         }
-        productRepository.saveAll(products);
+        productService.saveAll(products);
         return "redirect:/product";
     }
 
     @GetMapping("/{id}")
     public String editProduct(@PathVariable(value = "id") Long id, Model model) {
         logger.info("Edit product with id {}", id);
-        model.addAttribute("product", productRepository.findById(id));
+        model.addAttribute("product", productService.findById(id).orElseThrow(NotFoundException::new));
         return "product_form";
     }
 
@@ -80,15 +66,25 @@ public class ProductController {
     }
 
     @PostMapping("/update")
-    public String updateProduct(Product product) {
-        productRepository.save(product);
+    public String updateProduct(@Valid Product product, BindingResult bindingResult) {
+        if(bindingResult.hasErrors()){
+            return "product_form";
+        }
+        productService.save(product);
         return "redirect:/product";
     }
 
     @DeleteMapping("/{id}")
     public String deleteProduct(@PathVariable(value = "id") Long id) {
         logger.info("Delete product with id {}", id);
-        productRepository.deleteById(id);
+        productService.deleteById(id);
         return "redirect:/product";
+    }
+
+    @ExceptionHandler
+    public ModelAndView notFoundExceptionHandler(NotFoundException ex){
+        ModelAndView modelAndView = new ModelAndView("not_found");
+        modelAndView.setStatus(HttpStatus.NOT_FOUND);
+        return modelAndView;
     }
 }
